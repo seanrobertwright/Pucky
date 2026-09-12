@@ -17,8 +17,9 @@ from providers import ProviderError
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAMES = {"claude": "Claude Code", "codex": "Codex", "openrouter": "OpenRouter", "antigravity": "Antigravity",
-         "gemini": "Gemini", "zai": "z.AI GLM", "deepseek": "DeepSeek"}
-DEFAULT_ORDER = ["claude", "codex", "openrouter", "antigravity", "zai", "deepseek"]
+         "gemini": "Gemini", "zai": "z.AI GLM", "deepseek": "DeepSeek", "kiro": "Kiro",
+         "copilot": "GitHub Copilot"}
+DEFAULT_ORDER = ["claude", "codex", "copilot", "kiro", "openrouter", "antigravity", "zai", "deepseek"]
 MAX_BACKOFF = 1800
 
 

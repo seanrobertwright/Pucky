@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <time.h>
 
-#define MAX_PROVIDERS 6
+#define MAX_PROVIDERS 8
 #define MAX_WINDOWS 3
 
 enum class Status : uint8_t { None, Ok, Warn, Crit, Stale, Error };

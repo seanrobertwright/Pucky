@@ -3,7 +3,7 @@
 port = 8787
 
 # Dial order, left to right when turning clockwise.
-order = ["claude", "codex", "openrouter", "antigravity", "zai", "deepseek"]
+order = ["claude", "codex", "copilot", "kiro", "openrouter", "antigravity", "zai", "deepseek"]
 
 [thresholds]
 window_warn_pct = 80
@@ -74,3 +74,18 @@ api_key = ""
 # Log in at platform.deepseek.com/usage, DevTools -> Network, pick a request to /api/v0/usage,
 # copy the value after "Bearer " from its Authorization header. Expires; re-copy when the log says so.
 # session_token = ""
+
+[providers.copilot]
+enabled = true
+poll_s = 300
+# Uses the GitHub CLI's login (`gh auth token`), read-only; or set token = "gho_..." explicitly.
+# token = ""
+# gh = "gh"
+
+[providers.kiro]
+enabled = true
+poll_s = 300
+# Reads Kiro IDE's login from ~/.aws/sso/cache/kiro-auth-token.json, read-only (the IDE refreshes it).
+# token_file = "~/.aws/sso/cache/kiro-auth-token.json"
+# base_url = "https://codewhisperer.us-east-1.amazonaws.com"   # Frankfurt: https://q.eu-central-1.amazonaws.com
+# profile_arn = ""                                              # defaults to the one in the token file

@@ -19,6 +19,8 @@ Planned mapping (provider -> icon):
 | Antigravity | `antigravity-color` | gradient arch (`antigravity` = white); replaces Gemini CLI |
 | DeepSeek    | `deepseek-color`  | blue whale (`deepseek` = white)        |
 | z.AI (GLM)  | `zai`             | white "Z"; `zhipu*` is the parent co.  |
+| Kiro        | `kiro-color`      | purple ghost tile (`kiro` = white)     |
+| GitHub Copilot | `githubcopilot` | Copilot mascot, white (`copilot` = M365 Copilot, not used) |
 
 For LVGL, convert the chosen PNGs to C arrays (RGB565A8) with LVGL's image converter:
 

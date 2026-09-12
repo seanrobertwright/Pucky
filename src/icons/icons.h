@@ -9,6 +9,8 @@ LV_IMAGE_DECLARE(icon_gemini_96);
 LV_IMAGE_DECLARE(icon_antigravity_96);
 LV_IMAGE_DECLARE(icon_zai_96);
 LV_IMAGE_DECLARE(icon_deepseek_96);
+LV_IMAGE_DECLARE(icon_kiro_96);
+LV_IMAGE_DECLARE(icon_copilot_96);
 LV_IMAGE_DECLARE(icon_claude_64);
 LV_IMAGE_DECLARE(icon_codex_64);
 LV_IMAGE_DECLARE(icon_openrouter_64);
@@ -16,6 +18,8 @@ LV_IMAGE_DECLARE(icon_gemini_64);
 LV_IMAGE_DECLARE(icon_antigravity_64);
 LV_IMAGE_DECLARE(icon_zai_64);
 LV_IMAGE_DECLARE(icon_deepseek_64);
+LV_IMAGE_DECLARE(icon_kiro_64);
+LV_IMAGE_DECLARE(icon_copilot_64);
 
 struct ProviderStyle {
   const char *id;
@@ -33,6 +37,8 @@ static const ProviderStyle PROVIDER_STYLES[] = {
   {"gemini",     &icon_gemini_96,     &icon_gemini_64,     0x4E8DF5},   // retired CLI, kept for old hosts
   {"zai",        &icon_zai_96,        &icon_zai_64,        0xE0E0E0},
   {"deepseek",   &icon_deepseek_96,   &icon_deepseek_64,   0x4D6BFE},
+  {"kiro",       &icon_kiro_96,       &icon_kiro_64,       0x9B5CF6},
+  {"copilot",    &icon_copilot_96,    &icon_copilot_64,    0xE6EDF3},
 };
 
 inline const ProviderStyle *providerStyle(const char *id) {

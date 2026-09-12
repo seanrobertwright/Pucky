@@ -178,7 +178,7 @@ static void buildProvider() {
 }
 
 static void layoutDots(uint8_t n, uint8_t cur, uint32_t accent) {
-  const int gap = 16;
+  const int gap = 14;
   int x0 = -((int)n - 1) * gap / 2;
   for (int i = 0; i < MAX_PROVIDERS; i++) {
     if (i >= n) { lv_obj_add_flag(dots[i], LV_OBJ_FLAG_HIDDEN); continue; }
@@ -269,7 +269,7 @@ static void buildOverview() {
   lv_obj_set_style_bg_opa(scrOver, LV_OPA_COVER, 0);
   lv_obj_remove_flag(scrOver, LV_OBJ_FLAG_SCROLLABLE);
   for (int i = 0; i < MAX_PROVIDERS; i++) {
-    ovArc[i] = mkArc(scrOver, 118, 9);
+    ovArc[i] = mkArc(scrOver, 104, 8);      // 8 arcs fit a ring of r=160 with ~20 px between them
     ovIcon[i] = lv_image_create(scrOver);
     lv_image_set_scale(ovIcon[i], 200);    // 64 px asset shown at 50 px
     lv_obj_add_flag(ovArc[i], LV_OBJ_FLAG_HIDDEN);
@@ -283,7 +283,7 @@ static void buildOverview() {
 
 void uiShowOverview(const Model &m, uint8_t currentIdx) {
   if (lv_screen_active() != scrOver) lv_screen_load_anim(scrOver, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
-  const float R = 158.0f;
+  const float R = 160.0f;
   for (int i = 0; i < MAX_PROVIDERS; i++) {
     if (i >= m.nProviders) {
       lv_obj_add_flag(ovArc[i], LV_OBJ_FLAG_HIDDEN);

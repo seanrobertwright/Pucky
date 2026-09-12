@@ -5,8 +5,8 @@
 # Pucky
 
 A desk knob that shows how much of your AI subscriptions and credits you've burned through.
-Turn the dial to switch between **Claude Code, Codex, OpenRouter, Antigravity (Gemini), z.AI GLM
-and DeepSeek**; each page shows usage rings, reset times, balances and 30-day spend, with a
+Turn the dial to switch between **Claude Code, Codex, GitHub Copilot, Kiro, OpenRouter,
+Antigravity (Gemini), z.AI GLM and DeepSeek**; each page shows usage rings, reset times, balances and 30-day spend, with a
 breathing LED that changes rhythm when something is running low.
 
 It runs on an [Elecrow CrowPanel 2.1" rotary display](docs/crowpanel-2.1-rotary.md) (ESP32-S3,
@@ -42,6 +42,8 @@ The display only renders it. Adding or fixing a provider is a Python change — 
 |---|---|---|
 | Claude Code (Pro/Max) | 5-hour and 7-day window %, reset times | Claude Code's login, read-only |
 | Codex (ChatGPT plan) | 5-hour / weekly window %, reset times | Codex's login, read-only |
+| GitHub Copilot (Pro/Pro+/Business) | premium requests used of the monthly allowance, reset date | `gh` CLI login, read-only |
+| Kiro (Free/Pro/Pro+/Power) | monthly plan credits %, bonus credits, overage, reset date | Kiro IDE login, read-only |
 | Antigravity (Google AI Pro) | quota pools with 5-hour windows | `agy` login in the OS keyring, read-only |
 | z.AI GLM Coding Plan | 5-hour and weekly quota %, monthly MCP quota, 30-day calls/tokens | API key |
 | OpenRouter | credits left, 30-day spend (+ requests/tokens with a management key) | API key |
@@ -114,8 +116,9 @@ is 2.4 GHz only.
 | `[subscriptions]` | Fixed monthly fees added to the 30-day spend figure |
 | `[providers.<id>]` | `enabled`, `poll_s`, and the credentials each adapter needs (see the comments in `config.example.toml`) |
 
-Claude, Codex and Antigravity need no keys — they reuse the CLI logins on the PC. Restart the
-agent (or the scheduled task) after editing.
+Claude, Codex, Copilot, Kiro and Antigravity need no keys — they reuse the CLI/IDE logins on
+the PC (Kiro's token is only refreshed by the Kiro IDE itself, so open Kiro now and then).
+Restart the agent (or the scheduled task) after editing.
 
 ## The dock
 
