@@ -1,0 +1,76 @@
+# Copy to config.toml (gitignored) and fill in. Providers with enabled = false are skipped.
+
+port = 8787
+
+# Dial order, left to right when turning clockwise.
+order = ["claude", "codex", "openrouter", "antigravity", "zai", "deepseek"]
+
+[thresholds]
+window_warn_pct = 80
+window_crit_pct = 95
+money_warn_usd = 5.0
+money_crit_usd = 2.0
+
+# Fixed monthly subscription fees (USD), added to the 30-day spend figure. Leave 0 to ignore.
+[subscriptions]
+claude = 0
+codex = 0
+antigravity = 0     # Google AI Pro
+zai = 0
+
+[providers.claude]
+enabled = true
+poll_s = 300
+credentials = "~/.claude/.credentials.json"   # read-only, never refreshed here
+
+[providers.codex]
+enabled = true
+poll_s = 300
+auth = "~/.codex/auth.json"                   # read-only
+
+[providers.antigravity]
+enabled = true
+poll_s = 300
+# Reads agy's login from the OS keyring (Windows Credential Manager "gemini:antigravity"), read-only.
+# Expired access tokens are refreshed in memory with Antigravity's OAuth client; its id/secret ship
+# inside the open-source tooling (see antigravity-usage/src/google/oauth.ts) but are kept out of this
+# repo - paste them here.
+client_id = ""
+client_secret = ""
+# token_file = ""       # non-Windows: path to a JSON file with the same shape as the keyring blob
+# plan_label = "AI Pro" # override the tier name shown on the dial
+
+# Gemini CLI was retired in June 2026 (its OAuth client is now rejected); use antigravity instead.
+[providers.gemini]
+enabled = false
+poll_s = 300
+creds = "~/.gemini/oauth_creds.json"
+# gemini-cli's OAuth client (packages/core/src/code_assist/oauth2.ts in its repo), kept out of this repo.
+client_id = ""
+client_secret = ""
+# project = ""          # Google Cloud project id if the quota call demands one
+# plan_label = "AI Pro"
+
+[providers.openrouter]
+enabled = false
+poll_s = 120
+api_key = ""
+# Optional: a Management key (openrouter.ai/settings -> Management keys) enables
+# /api/v1/activity for exact 30-day spend + request/token counts. Leave empty to derive
+# spend from daily snapshots instead.
+# management_key = ""
+
+[providers.zai]
+enabled = false
+poll_s = 120
+api_key = ""
+base_url = "https://api.z.ai"                 # or https://open.bigmodel.cn for the CN platform
+
+[providers.deepseek]
+enabled = false
+poll_s = 120
+api_key = ""
+# Optional: web session token for 30-day requests/tokens/cost from the platform dashboard API.
+# Log in at platform.deepseek.com/usage, DevTools -> Network, pick a request to /api/v0/usage,
+# copy the value after "Bearer " from its Authorization header. Expires; re-copy when the log says so.
+# session_token = ""

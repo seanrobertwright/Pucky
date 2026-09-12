@@ -1,0 +1,22 @@
+{
+  "PUCK_D":        {"value": 104.0, "role": "outer"},
+  "PUCK_H":        {"value": 26.0,  "role": "neutral"},
+  "TILT_deg":      {"value": 15.0,  "role": "neutral", "note": "screen back-lean, user-confirmed"},
+  "CRADLE_Y":      {"value": -12.0, "role": "neutral", "note": "cradle front-face centre, behind the puck centre"},
+  "CRADLE_Z":      {"value": 52.0,  "role": "neutral", "note": "puts the knob's lowest point ~4 above the trough floor"},
+  "POCKET_D":      {"value": 72.6,  "role": "hole",    "note": "cradle 72.0 + 0.6"},
+  "POCKET_DEPTH":  {"value": 20.6,  "role": "neutral", "note": "cradle 20.4 + 0.2"},
+  "PILLAR_D":      {"value": 80.0,  "role": "outer",   "note": "3.7 wall around the pocket"},
+  "PILLAR_BACK":   {"value": 8.0,   "role": "neutral", "note": "material behind the pocket floor: 6.7 insert + 1.3"},
+  "SADDLE_TOP":    {"value": 0.0,   "role": "neutral", "note": "saddle cut at the cradle axis: walls meet the cut at 90 deg (a cut above the axis leaves a knife-edge lip that DFM flags)"},
+  "TROUGH_D":      {"value": 86.0,  "role": "hole",    "note": "knob 80 + 2 x 3 gap"},
+  "TROUGH_LEN":    {"value": 24.0,  "role": "neutral", "note": "6 gap + 14 knob + 4"},
+  "INSERT_D":      {"value": 4.0,   "role": "hole",    "note": "parts-db:M3-insert.hole_d"},
+  "INSERT_DEPTH":  {"value": 6.7,   "role": "neutral", "note": "parts-db:M3-insert.length 5.7 + 1.0"},
+  "INSERT_R":      {"value": 30.6,  "role": "neutral", "note": "matches cradle MOUNT_R"},
+  "INSERT_ANGLE0_deg": {"value": 210.0, "role": "neutral"},
+  "GROOVE_W":      {"value": 9.0,   "role": "hole",    "note": "USB cable <= 5.5 with slack; 9 mm bridge"},
+  "GROOVE_H":      {"value": 8.0,   "role": "neutral"},
+  "SHAFT_Y0":      {"value": -20.0, "role": "neutral", "note": "vertical cable shaft under the cradle slot, y extent"},
+  "SHAFT_Y1":      {"value": 6.0,   "role": "neutral", "note": "runs forward through the trough floor so no fin is left between shaft and trough"}
+}

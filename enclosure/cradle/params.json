@@ -1,0 +1,20 @@
+{
+  "CRADLE_OD":      {"value": 72.0,  "role": "outer",   "note": "nests in the base pocket (POCKET_D 72.6)"},
+  "CRADLE_T":       {"value": 20.4,  "role": "neutral", "note": "CAVITY_DEPTH + FLOOR"},
+  "FLOOR":          {"value": 2.4,   "role": "neutral", "note": "6 perimeters"},
+  "CAVITY_D":       {"value": 49.2,  "role": "hole",    "note": "PCB 48.2 (user-confirmed) + 1.0"},
+  "CAVITY_DEPTH":   {"value": 18.0,  "role": "neutral", "note": "6.0 above PCB face + 12.0 behind it"},
+  "POST_D":         {"value": 8.4,   "role": "outer"},
+  "POST_PCD":       {"value": 12.70, "role": "neutral", "note": "11.0 standoff pitch / sqrt(3) * 2"},
+  "POST_ANGLE0_deg":{"value": 60.0,  "role": "neutral", "note": "posts at 60/180/300 so USB-IN lands at 270 (bottom)"},
+  "POST_TOP_DEPTH": {"value": 8.6,   "role": "neutral", "note": "6.0 PCB face + (5.6 standoff - 3.0 pocket)"},
+  "POCKET_D":       {"value": 5.4,   "role": "hole",    "note": "4.4 A/F hex -> 5.08 corners + 0.3"},
+  "POCKET_DEPTH":   {"value": 3.0,   "role": "neutral"},
+  "SCREW_D":        {"value": 2.4,   "role": "hole",    "note": "parts-db:M2.clearance"},
+  "SLOT_W":         {"value": 8.0,   "role": "hole",    "note": "USB cable slot at 270 degrees"},
+  "MOUNT_R":        {"value": 30.6,  "role": "neutral"},
+  "MOUNT_ANGLE0_deg":{"value": 210.0,"role": "neutral", "note": "two mounts at 210 and 330; 90 would sit above the saddle"},
+  "MOUNT_D":        {"value": 3.4,   "role": "hole",    "note": "parts-db:M3.clearance"},
+  "CBORE_D":        {"value": 6.0,   "role": "hole",    "note": "parts-db:M3.head_d 5.5 + 0.5"},
+  "CBORE_DEPTH":    {"value": 3.5,   "role": "neutral", "note": "parts-db:M3.head_h 3.0 + 0.5"}
+}

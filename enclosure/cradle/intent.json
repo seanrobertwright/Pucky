@@ -1,0 +1,90 @@
+{
+  "holds": "Elecrow 2.1in rotary display module by its three M2 brass standoffs (11.0 pitch, 4.4 A/F, 5.6 tall) on a 48.2 round PCB; the 80 mm knob body must float 6 mm clear in front of the cradle",
+  "asserts": [
+    {
+      "outer_diameter": [71.9, 72.1],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_diameter", "at": [0, 0], "rank": 0},
+      "note": "cradle disc; must nest in the base pocket (72.6) with 0.3 per side"
+    },
+    {
+      "cavity_diameter": [49.1, 49.3],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_diameter", "at": [0, 0], "rank": 1},
+      "note": "PCB measured 47.7-48.2; 1.0 total clearance so the board never binds"
+    },
+    {
+      "cavity_depth": [17.9, 18.1],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_depth", "at": [0, 0], "rank": 1},
+      "note": "6.0 above the PCB face (knob floats) + 12.0 behind it for the 6.0 USB plug and cable bend"
+    },
+    {
+      "floor_thickness": [2.3, 2.5],
+      "source": "user-confirmed",
+      "measure": {"kind": "plane_gap", "between": [0, 1]},
+      "note": "build-plate face to cavity floor; 6 perimeters of a 0.4 nozzle"
+    },
+    {
+      "post_diameter": [8.3, 8.5],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_diameter", "at": [-6.35, 0.0], "rank": 0},
+      "note": "post at the 180-degree standoff position (PCD 12.70 from the 11.0 pitch)"
+    },
+    {
+      "post_height": [9.3, 9.5],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_depth", "at": [-6.35, 0.0], "rank": 0},
+      "note": "cavity floor to post top: 18.0 - 8.6; leaves 2.6 under the PCB for SMD parts"
+    },
+    {
+      "standoff_pocket_diameter": [5.3, 5.5],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_diameter", "at": [-6.35, 0.0], "rank": 1},
+      "note": "4.4 A/F hex = 5.08 across corners, + 0.3; a tight pocket would jam the drop-in"
+    },
+    {
+      "standoff_pocket_depth": [2.9, 3.1],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_depth", "at": [-6.35, 0.0], "rank": 1},
+      "note": "3.0 of the 5.6 standoff engages; keys rotation of the fixed PCB"
+    },
+    {
+      "standoff_screw_hole": [2.3, 2.5],
+      "source": "parts-db:M2.clearance",
+      "measure": {"kind": "cylinder_diameter", "at": [-6.35, 0.0], "rank": "smallest"},
+      "note": "optional M2 screw from the back into the standoff; absent hole = can never bolt down"
+    },
+    {
+      "standoff_pocket_count": [3, 3],
+      "source": "user-confirmed",
+      "measure": {"kind": "feature_count", "diameter": [5.3, 5.5]},
+      "note": "three standoffs, three pockets; two would let the board rock"
+    },
+    {
+      "mount_hole": [3.3, 3.5],
+      "source": "parts-db:M3.clearance",
+      "measure": {"kind": "cylinder_diameter", "at": [-26.5, -15.3], "rank": "smallest"},
+      "note": "M3 into the base's heat-set insert, at r=30.6 / 210 degrees"
+    },
+    {
+      "mount_counterbore": [5.9, 6.1],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_diameter", "at": [-26.5, -15.3], "rank": 0},
+      "note": "M3 socket head 5.5 (parts-db) + 0.5; absent counterbore reads as 3.4, the defect"
+    },
+    {
+      "mount_counterbore_depth": [3.4, 3.6],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_depth", "at": [-26.5, -15.3], "rank": 0},
+      "note": "M3 head_h 3.0 (parts-db) + 0.5 so the head sits below the cradle face"
+    },
+    {
+      "dfm_blockers": [0, 0],
+      "source": "user-confirmed",
+      "measure": {"kind": "dfm_violation_count", "severity": "BLOCKER", "material": "PLA_generic"},
+      "note": "printed face-up on a P1S with no supports"
+    }
+  ],
+  "golden": {"bbox": [72.0, 72.0, 20.4], "volume": 47923.54, "tol_pct": 1.0}
+}

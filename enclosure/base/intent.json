@@ -1,0 +1,38 @@
+{
+  "holds": "the cradle (72.0 disc, 20.4 thick) in a saddle tilted 15 degrees back, with a trough so the 80 mm rotating knob never touches the base, two M3 heat-set inserts, and a cable groove underneath to the rear",
+  "asserts": [
+    {
+      "puck_diameter": [103.9, 104.1],
+      "source": "user-confirmed",
+      "measure": {"kind": "cylinder_diameter", "at": [0, 0], "rank": 0},
+      "note": "footprint for a 15-degree lean of an 80 g display"
+    },
+    {
+      "cable_groove_height": [7.9, 8.1],
+      "source": "user-confirmed",
+      "measure": {"kind": "plane_gap", "between": [0, 1]},
+      "note": "build-plate face to the groove ceiling: a USB cable is ~5 mm, and the 9 mm ceiling bridges"
+    },
+    {
+      "knob_trough_diameter": [85.9, 86.1],
+      "source": "user-confirmed",
+      "tier": 2,
+      "measure": {"kind": "cylinder_diameter", "at": [0, -12], "rank": 1, "tol_xy": 40},
+      "note": "tilted 15 degrees: BREP can list it but the Z-ruler cannot verify it, ESTIMATE only. Knob 80 + 3 per side; the knob must never touch"
+    },
+    {
+      "saddle_pocket_diameter": [72.5, 72.7],
+      "source": "user-confirmed",
+      "tier": 2,
+      "measure": {"kind": "cylinder_diameter", "at": [0, -12], "rank": 2, "tol_xy": 40},
+      "note": "tilted 15 degrees, ESTIMATE only (radius-sorted: puck 104, trough 86, pocket 72.6, inserts 4.0); verified by the fit of the printed cradle"
+    },
+    {
+      "dfm_blockers": [0, 0],
+      "source": "user-confirmed",
+      "measure": {"kind": "dfm_violation_count", "severity": "BLOCKER", "material": "PLA_generic"},
+      "note": "printed on its flat bottom with no supports; insert holes are teardropped for that reason"
+    }
+  ],
+  "golden": {"bbox": [104.0, 104.0, 52.0], "volume": 219963.94, "tol_pct": 1.0}
+}

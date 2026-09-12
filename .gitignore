@@ -1,0 +1,8 @@
+.pio/
+.vscode/
+firmware/backup/
+host/config.toml
+host/state/
+include/secrets.h
+__pycache__/
+.env

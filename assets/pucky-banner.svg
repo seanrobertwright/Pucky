@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="150" viewBox="0 0 560 150" role="img" aria-label="PUCKY">
+  <defs>
+    <linearGradient id="mango" x1="0" y1="0" x2="560" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#39FF14"/>
+      <stop offset="50%"  stop-color="#FFE600"/>
+      <stop offset="100%" stop-color="#FF2D2D"/>
+    </linearGradient>
+    <filter id="glow" x="-10%" y="-20%" width="120%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <text x="16" y="34" xml:space="preserve" font-family="'Cascadia Mono','Fira Code','DejaVu Sans Mono',Consolas,'Courier New',monospace" font-size="20" font-weight="bold" fill="url(#mango)" filter="url(#glow)">
+    <tspan x="16" dy="0">██████╗ ██╗   ██╗ ██████╗██╗  ██╗██╗   ██╗</tspan>
+    <tspan x="16" dy="20">██╔══██╗██║   ██║██╔════╝██║ ██╔╝╚██╗ ██╔╝</tspan>
+    <tspan x="16" dy="20">██████╔╝██║   ██║██║     █████╔╝  ╚████╔╝ </tspan>
+    <tspan x="16" dy="20">██╔═══╝ ██║   ██║██║     ██╔═██╗   ╚██╔╝  </tspan>
+    <tspan x="16" dy="20">██║     ╚██████╔╝╚██████╗██║  ██╗   ██║   </tspan>
+    <tspan x="16" dy="20">╚═╝      ╚═════╝  ╚═════╝╚═╝  ╚═╝   ╚═╝   </tspan>
+  </text>
+</svg>
