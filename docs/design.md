@@ -92,7 +92,7 @@ the 30-day spend (money kind). Currently populated by z.AI (always), OpenRouter 
 | Input | Action |
 |---|---|
 | Rotate CW / CCW | Next / previous provider, wrapping; pauses auto-cycle |
-| Press | Force poll now; pauses auto-cycle for 60 s |
+| Press | Refresh now: device calls the host's `/api/refresh` (wakes every provider poller), re-reads `/api/status` after 3 s and again after 8 s, showing "refreshing…" in place of the age line meanwhile; pauses auto-cycle for 60 s |
 | Double-click | Toggle overview page |
 | Idle | Auto-cycle every 8 s, resuming 30 s after the last input |
 | LED (GPIO 43) | Breathes in the colour of the **worst** provider status (ok = dim white, warn = amber, crit = red, all stale = slow grey pulse) |
@@ -130,7 +130,7 @@ host/state/              snapshots.json, last-good cache (gitignored)
 host/install-task.ps1    registers the Task Scheduler job (at logon, hidden)
 ```
 
-`GET /api/status` (device), `GET /` (tiny human-readable status page for debugging).
+`GET /api/status` (device), `GET /api/refresh` (device on knob press: wakes all pollers, returns at once), `GET /` (tiny human-readable status page for debugging).
 
 ## 8. Plan
 

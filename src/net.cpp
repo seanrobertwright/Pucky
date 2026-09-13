@@ -6,10 +6,14 @@
 #include "secrets.h"
 
 static const uint32_t POLL_MS = 60000, HTTP_TIMEOUT_MS = 5000;
+// After a press: hit /api/refresh, then read status once the providers have had time to answer
+// (~1-3 s each, in parallel), and once more for stragglers.
+static const uint32_t REFRESH_FIRST_MS = 3000, REFRESH_SECOND_MS = 8000;
 
 static Model shared = {};
 static SemaphoreHandle_t mtx;
 static volatile bool refreshNow = false;
+static volatile bool refreshing = false;
 
 static Status parseStatus(const char *s) {
   if (!s) return Status::Error;
@@ -76,6 +80,25 @@ static bool parseInto(Model &m, const String &body) {
   return true;
 }
 
+// HOST_URL points at /api/status; the refresh endpoint lives next to it.
+static String refreshUrl() {
+  String u = HOST_URL;
+  int i = u.lastIndexOf("/api/status");
+  if (i >= 0) u = u.substring(0, i) + "/api/refresh";
+  return u;
+}
+
+static void askHostToRefresh() {
+  HTTPClient http;
+  http.setTimeout(HTTP_TIMEOUT_MS);
+  http.setConnectTimeout(HTTP_TIMEOUT_MS);
+  String u = refreshUrl();
+  if (!http.begin(u)) return;
+  int code = http.GET();
+  Serial.printf("[net] GET %s -> %d\n", u.c_str(), code);
+  http.end();
+}
+
 static bool pollOnce(Model &m) {
   HTTPClient http;
   http.setTimeout(HTTP_TIMEOUT_MS);
@@ -97,7 +120,8 @@ static void netTask(void *) {
   WiFi.setAutoReconnect(true);
   WiFi.setSleep(false);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
-  uint32_t lastPoll = 0;
+  uint32_t nextPoll = 0;            // millis() at which to read status next
+  uint32_t followUp = 0;            // second read after a refresh (0 = none pending)
   bool first = true;
   for (;;) {
     if (WiFi.status() != WL_CONNECTED) {
@@ -106,9 +130,17 @@ static void netTask(void *) {
     }
     if (first) { Serial.printf("[net] wifi up, ip %s\n", WiFi.localIP().toString().c_str()); first = false; }
     uint32_t now = millis();
-    if (refreshNow || lastPoll == 0 || now - lastPoll >= POLL_MS) {
+    if (refreshNow) {
       refreshNow = false;
-      lastPoll = now;
+      refreshing = true;
+      askHostToRefresh();
+      now = millis();
+      nextPoll = now + REFRESH_FIRST_MS;
+      followUp = now + REFRESH_SECOND_MS;
+    }
+    if (nextPoll == 0 || (int32_t)(now - nextPoll) >= 0) {
+      if (followUp && (int32_t)(now - followUp) >= 0) { followUp = 0; refreshing = false; }
+      nextPoll = followUp ? followUp : now + POLL_MS;
       Model fresh = {};
       bool ok = pollOnce(fresh);
       xSemaphoreTake(mtx, portMAX_DELAY);
@@ -141,5 +173,6 @@ void netGetModel(Model &out) {
 }
 
 void netRequestRefresh() { refreshNow = true; }
+bool netRefreshing() { return refreshing; }
 bool netWifiConnected() { return WiFi.status() == WL_CONNECTED; }
 int netRssi() { return WiFi.RSSI(); }

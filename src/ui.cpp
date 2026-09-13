@@ -356,6 +356,11 @@ void uiTick(const Model &m, uint8_t idx, bool overview) {
   uint32_t wcol = !netWifiConnected() ? C_CRIT : m.hostReachable ? C_DIM : C_WARN;
   lv_label_set_text(lblWifi, wifi);
   lv_obj_set_style_text_color(lblWifi, lv_color_hex(wcol), 0);
+  if (netRefreshing()) {
+    lv_label_set_text(lblAgo, LV_SYMBOL_REFRESH " refreshing…");
+    lv_obj_set_style_text_color(lblAgo, lv_color_hex(C_TEXT), 0);
+    return;
+  }
   if (idx < m.nProviders) {
     const Provider &p = m.providers[idx];
     fmtAgo(buf, sizeof buf, p.updatedAt);
