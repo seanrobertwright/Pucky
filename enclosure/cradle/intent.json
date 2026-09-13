@@ -28,31 +28,31 @@
     {
       "post_diameter": [8.3, 8.5],
       "source": "user-confirmed",
-      "measure": {"kind": "cylinder_diameter", "at": [-6.35, 0.0], "rank": 0},
-      "note": "post at the 180-degree standoff position (PCD 12.70 from the 11.0 pitch)"
+      "measure": {"kind": "cylinder_diameter", "at": [6.35, 0.0], "rank": 0},
+      "note": "post at the 0-degree standoff position (PCD 12.70 from the 11.0 pitch)"
     },
     {
       "post_height": [9.3, 9.5],
       "source": "user-confirmed",
-      "measure": {"kind": "cylinder_depth", "at": [-6.35, 0.0], "rank": 0},
+      "measure": {"kind": "cylinder_depth", "at": [6.35, 0.0], "rank": 0},
       "note": "cavity floor to post top: 18.0 - 8.6; leaves 2.6 under the PCB for SMD parts"
     },
     {
       "standoff_pocket_diameter": [5.3, 5.5],
       "source": "user-confirmed",
-      "measure": {"kind": "cylinder_diameter", "at": [-6.35, 0.0], "rank": 1},
+      "measure": {"kind": "cylinder_diameter", "at": [6.35, 0.0], "rank": 1},
       "note": "4.4 A/F hex = 5.08 across corners, + 0.3; a tight pocket would jam the drop-in"
     },
     {
       "standoff_pocket_depth": [2.9, 3.1],
       "source": "user-confirmed",
-      "measure": {"kind": "cylinder_depth", "at": [-6.35, 0.0], "rank": 1},
+      "measure": {"kind": "cylinder_depth", "at": [6.35, 0.0], "rank": 1},
       "note": "3.0 of the 5.6 standoff engages; keys rotation of the fixed PCB"
     },
     {
       "standoff_screw_hole": [2.3, 2.5],
       "source": "parts-db:M2.clearance",
-      "measure": {"kind": "cylinder_diameter", "at": [-6.35, 0.0], "rank": "smallest"},
+      "measure": {"kind": "cylinder_diameter", "at": [6.35, 0.0], "rank": "smallest"},
       "note": "optional M2 screw from the back into the standoff; absent hole = can never bolt down"
     },
     {

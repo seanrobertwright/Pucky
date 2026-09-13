@@ -1,40 +1,40 @@
 {
     "error_string": "Success.",
-    "export_time": 917,
+    "export_time": 1362,
     "layer_height": 0.20000000298023224,
     "plate_index": 0,
-    "prepare_time": 114,
+    "prepare_time": 102,
     "return_code": 0,
     "sliced_plates": [
         {
             "feature_type_times": {
-                "Bottom surface": 120.60891723632813,
-                "Bridge": 201.17063903808594,
-                "Custom": 35.014129638671875,
-                "Gap infill": 20.185115814208984,
-                "Inner wall": 205.24664306640625,
-                "Internal solid infill": 313.1547546386719,
-                "Outer wall": 319.1016540527344,
-                "Sparse infill": 543.7933959960938,
-                "Top surface": 114.71624755859375,
-                "Travel": 267.1596374511719,
-                "Undefined": 251.9950408935547
+                "Bottom surface": 120.60832977294922,
+                "Bridge": 201.27487182617188,
+                "Custom": 35.01454162597656,
+                "Gap infill": 20.470073699951172,
+                "Inner wall": 205.24777221679688,
+                "Internal solid infill": 313.2770690917969,
+                "Outer wall": 318.7336120605469,
+                "Sparse infill": 543.927978515625,
+                "Top surface": 114.57382202148438,
+                "Travel": 265.79345703125,
+                "Undefined": 250.6288299560547
             },
             "filament_change_times": 0,
             "filaments": [
                 {
                     "filament_id": "GFA00",
                     "id": 1,
-                    "main_used_g": 25.234506607055664,
-                    "total_used_g": 25.234506607055664
+                    "main_used_g": 25.23460578918457,
+                    "total_used_g": 25.23460578918457
                 }
             ],
-            "generate_support_material_time": 77,
+            "generate_support_material_time": 67,
             "id": 1,
-            "infill_time": 174,
+            "infill_time": 164,
             "layer_filament_change": 0,
-            "main_predication": 2105.199462890625,
-            "make_perimeters_time": 209,
+            "main_predication": 2103.96240234375,
+            "make_perimeters_time": 196,
             "obj_cached_cnt": 0,
             "objects": [
                 {
@@ -51,9 +51,9 @@
                     "triangle_count": 7562
                 }
             ],
-            "sliced_time": 960,
-            "sliced_time_with_cache": 358,
-            "total_predication": 2125.018310546875,
+            "sliced_time": 902,
+            "sliced_time_with_cache": 338,
+            "total_predication": 2123.78173828125,
             "triangle_count": 7562,
             "warning_message": ""
         }

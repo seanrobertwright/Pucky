@@ -6,7 +6,7 @@
   "CAVITY_DEPTH":   {"value": 18.0,  "role": "neutral", "note": "6.0 above PCB face + 12.0 behind it"},
   "POST_D":         {"value": 8.4,   "role": "outer"},
   "POST_PCD":       {"value": 12.70, "role": "neutral", "note": "11.0 standoff pitch / sqrt(3) * 2"},
-  "POST_ANGLE0_deg":{"value": 60.0,  "role": "neutral", "note": "posts at 60/180/300 so USB-IN lands at 270 (bottom)"},
+  "POST_ANGLE0_deg":{"value": 0.0,   "role": "neutral", "note": "posts at 0/120/240 as seen from the cradle face (rear-photo layout mirrored, since the module flips in); USB-IN lands at 270 (bottom)"},
   "POST_TOP_DEPTH": {"value": 8.6,   "role": "neutral", "note": "6.0 PCB face + (5.6 standoff - 3.0 pocket)"},
   "POCKET_D":       {"value": 5.4,   "role": "hole",    "note": "4.4 A/F hex -> 5.08 corners + 0.3"},
   "POCKET_DEPTH":   {"value": 3.0,   "role": "neutral"},
