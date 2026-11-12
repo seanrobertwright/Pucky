@@ -3,11 +3,11 @@
 #include <Arduino.h>
 #include <time.h>
 
-#define MAX_PROVIDERS 8
+#define MAX_PROVIDERS 9
 #define MAX_WINDOWS 3
 
 enum class Status : uint8_t { None, Ok, Warn, Crit, Stale, Error };
-enum class Kind : uint8_t { None, Windows, Money };
+enum class Kind : uint8_t { None, Windows, Money, Runs };
 
 struct Window {
   char label[12];
@@ -19,6 +19,13 @@ struct Money {
   float remaining;
   float total;       // 0 = unknown
   float spend30d;
+};
+
+// Workflow-run tallies (Archon): how many runs sit in each state.
+struct Runs {
+  uint32_t running, completed, failed, cancelled;
+  uint32_t waiting;      // queued or paused at an approval gate
+  uint32_t total;
 };
 
 struct Provider {
@@ -35,6 +42,7 @@ struct Provider {
   uint8_t nWindows;
   Window windows[MAX_WINDOWS];
   Money money;
+  Runs runs;
 };
 
 struct Model {

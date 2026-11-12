@@ -11,6 +11,7 @@ LV_IMAGE_DECLARE(icon_zai_96);
 LV_IMAGE_DECLARE(icon_deepseek_96);
 LV_IMAGE_DECLARE(icon_kiro_96);
 LV_IMAGE_DECLARE(icon_copilot_96);
+LV_IMAGE_DECLARE(icon_archon_96);
 LV_IMAGE_DECLARE(icon_claude_64);
 LV_IMAGE_DECLARE(icon_codex_64);
 LV_IMAGE_DECLARE(icon_openrouter_64);
@@ -20,6 +21,7 @@ LV_IMAGE_DECLARE(icon_zai_64);
 LV_IMAGE_DECLARE(icon_deepseek_64);
 LV_IMAGE_DECLARE(icon_kiro_64);
 LV_IMAGE_DECLARE(icon_copilot_64);
+LV_IMAGE_DECLARE(icon_archon_64);
 
 struct ProviderStyle {
   const char *id;
@@ -39,6 +41,7 @@ static const ProviderStyle PROVIDER_STYLES[] = {
   {"deepseek",   &icon_deepseek_96,   &icon_deepseek_64,   0x4D6BFE},
   {"kiro",       &icon_kiro_96,       &icon_kiro_64,       0x9B5CF6},
   {"copilot",    &icon_copilot_96,    &icon_copilot_64,    0xE6EDF3},
+  {"archon",     &icon_archon_96,     &icon_archon_64,     0xD61CF2},
 };
 
 inline const ProviderStyle *providerStyle(const char *id) {

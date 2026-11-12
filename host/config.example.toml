@@ -3,7 +3,7 @@
 port = 8787
 
 # Dial order, left to right when turning clockwise.
-order = ["claude", "codex", "copilot", "kiro", "openrouter", "antigravity", "zai", "deepseek"]
+order = ["claude", "codex", "copilot", "kiro", "openrouter", "antigravity", "zai", "deepseek", "archon"]
 
 [thresholds]
 window_warn_pct = 80
@@ -89,3 +89,13 @@ poll_s = 300
 # token_file = "~/.aws/sso/cache/kiro-auth-token.json"
 # base_url = "https://codewhisperer.us-east-1.amazonaws.com"   # Frankfurt: https://q.eu-central-1.amazonaws.com
 # profile_arn = ""                                              # defaults to the one in the token file
+
+[providers.archon]
+enabled = true
+poll_s = 30
+max_backoff_s = 120     # a local server is often just not running; re-check soon instead of backing off for 30 min
+# base_url = "http://localhost:3090"   # Archon backend; no auth needed. Shows all-time run counts
+# Touch the Archon page on the dial to list the active runs and open one as a workflow graph.
+# recent_finished = N also lists the N most recent finished runs, so there is something to open
+# while nothing is running (0 = active runs only).
+recent_finished = 0

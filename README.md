@@ -7,7 +7,11 @@
 A desk knob that shows how much of your AI subscriptions and credits you've burned through.
 Turn the dial to switch between **Claude Code, Codex, GitHub Copilot, Kiro, OpenRouter,
 Antigravity (Gemini), z.AI GLM and DeepSeek**; each page shows usage rings, reset times, balances and 30-day spend, with a
-breathing LED that changes rhythm when something is running low.
+breathing LED that changes rhythm when something is running low. One extra page, **Archon**, isn't a
+usage meter: it counts your [Archon](https://github.com/coleam00/Archon) workflow runs by state
+(running / completed / failed / cancelled). **Touch that page** to list the active runs, turn the dial
+to pick one and touch again to open its workflow graph: nodes coloured by state, the dial walks from
+node to node and the view pans to follow. Press the knob to step back out.
 
 It runs on an [Elecrow CrowPanel 2.1" rotary display](docs/crowpanel-2.1-rotary.md) (ESP32-S3,
 480×480 round IPS, rotary knob with push) and is fed by a tiny Python agent on your PC. A
@@ -48,6 +52,7 @@ The display only renders it. Adding or fixing a provider is a Python change — 
 | z.AI GLM Coding Plan | 5-hour and weekly quota %, monthly MCP quota, 30-day calls/tokens | API key |
 | OpenRouter | credits left, 30-day spend (+ requests/tokens with a management key) | API key |
 | DeepSeek | balance, 30-day cost/requests/tokens | API key (+ optional dashboard session token) |
+| Archon | workflow runs: how many are running, completed, failed, cancelled (all-time, as on Archon's dashboard) | local Archon backend on `localhost:3090`, no auth |
 
 Every page also shows the clock, Wi-Fi state and "updated N s ago"; the overview page adds
 total AI spend over 30 days (pay-per-use spend plus any subscription fees you enter).
@@ -115,6 +120,13 @@ is 2.4 GHz only.
 | `[thresholds]` | `window_warn_pct` / `window_crit_pct` (default 80 / 95), `money_warn_usd` / `money_crit_usd` (5 / 2) |
 | `[subscriptions]` | Fixed monthly fees added to the 30-day spend figure |
 | `[providers.<id>]` | `enabled`, `poll_s`, and the credentials each adapter needs (see the comments in `config.example.toml`) |
+
+`recent_finished = N` under `[providers.archon]` also lists the N most recent finished runs in the
+touch view, so there is a graph to open while nothing is running.
+
+Archon needs no key either: the host reads its local backend (`base_url`, default `http://localhost:3090`),
+and shows "Archon not reachable" when it isn't running. `max_backoff_s` caps how long the host waits
+before retrying a failing provider (default 1800 s; the example config uses 120 s for Archon).
 
 Claude, Codex, Copilot, Kiro and Antigravity need no keys — they reuse the CLI/IDE logins on
 the PC (Kiro's token is only refreshed by the Kiro IDE itself, so open Kiro now and then).

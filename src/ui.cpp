@@ -10,6 +10,9 @@
 static const uint32_t C_BG = 0x000000, C_RING_BG = 0x1E2228, C_TEXT = 0xF2F2F2, C_DIM = 0x8A8F98,
                       C_WARN = 0xFFB300, C_CRIT = 0xE53935, C_STALE = 0x5A5F66;
 
+// Workflow-run states (Archon page). Failed/cancelled reuse the crit/warn colours.
+static const uint32_t C_RUN = 0x42A5F5, C_DONE = 0x3DDC84;
+
 static uint32_t statusColor(Status s, uint32_t accent) {
   switch (s) {
     case Status::Ok:    return accent;
@@ -141,6 +144,12 @@ static void setArcColor(lv_obj_t *arc, uint32_t c) {
 static lv_obj_t *scrProv, *arcOuter, *arcInner, *imgIcon, *lblName, *lblPlan, *lblBig, *lblSub, *lblSub2,
                 *lblClock, *lblWifi, *lblAgo, *dots[MAX_PROVIDERS];
 
+// Runs kind (Archon): the ring is split into four state segments and the centre is a 2x2 grid of counts.
+// Order = clockwise from 12 o'clock = grid order (row-major).
+static lv_obj_t *runSeg[4], *runNum[4], *runCap[4];
+static const char *const RUN_CAPTION[4] = {"running", "completed", "failed", "cancelled"};
+static const uint32_t RUN_COLOR[4] = {C_RUN, C_DONE, C_CRIT, C_WARN};
+
 static void buildProvider() {
   scrProv = lv_obj_create(nullptr);
   lv_obj_set_style_bg_color(scrProv, lv_color_hex(C_BG), 0);
@@ -149,6 +158,12 @@ static void buildProvider() {
 
   arcOuter = mkArc(scrProv, 470, 16);
   arcInner = mkArc(scrProv, 428, 12);
+  for (int i = 0; i < 4; i++) {       // segments draw their MAIN part (the track) in their own colour
+    runSeg[i] = mkArc(scrProv, 470, 16);
+    lv_obj_set_style_arc_opa(runSeg[i], LV_OPA_TRANSP, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(runSeg[i], lv_color_hex(RUN_COLOR[i]), LV_PART_MAIN);
+    lv_obj_add_flag(runSeg[i], LV_OBJ_FLAG_HIDDEN);
+  }
 
   lblClock = mkLabel(scrProv, &lv_font_montserrat_20, C_TEXT, LV_ALIGN_TOP_MID, 0, 40);
   lblWifi  = mkLabel(scrProv, &lv_font_montserrat_16, C_DIM, LV_ALIGN_TOP_MID, 58, 43);
@@ -164,6 +179,16 @@ static void buildProvider() {
   lv_obj_set_width(lblSub2, 300);
   lv_label_set_long_mode(lblSub2, LV_LABEL_LONG_WRAP);
   lblAgo  = mkLabel(scrProv, &lv_font_montserrat_14, C_DIM, LV_ALIGN_BOTTOM_MID, 0, -62);
+
+  // runs-kind count grid: number over caption, two columns
+  const int colX[2] = {-68, 68}, rowY[2] = {234, 296};
+  for (int i = 0; i < 4; i++) {
+    runNum[i] = mkLabel(scrProv, &lv_font_montserrat_32, C_TEXT, LV_ALIGN_TOP_MID, colX[i % 2], rowY[i / 2]);
+    runCap[i] = mkLabel(scrProv, &lv_font_montserrat_14, C_DIM, LV_ALIGN_TOP_MID, colX[i % 2], rowY[i / 2] + 38);
+    lv_label_set_text(runCap[i], RUN_CAPTION[i]);
+    lv_obj_add_flag(runNum[i], LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(runCap[i], LV_OBJ_FLAG_HIDDEN);
+  }
 
   // page dots
   for (int i = 0; i < MAX_PROVIDERS; i++) {
@@ -188,6 +213,43 @@ static void layoutDots(uint8_t n, uint8_t cur, uint32_t accent) {
   }
 }
 
+// Show/hide the runs-kind widgets. Segments are switched on here and trimmed by layoutRunSegments().
+static void showRuns(bool on) {
+  for (int i = 0; i < 4; i++) {
+    for (lv_obj_t *o : {runSeg[i], runNum[i], runCap[i]}) {
+      if (on) lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN);
+    }
+  }
+}
+
+// Split the ring among the non-empty states in proportion to their counts. A small gap separates
+// neighbours and every segment gets a minimum sweep so a lone failure among hundreds stays visible.
+static void layoutRunSegments(const uint32_t v[4], bool dim) {
+  uint32_t total = 0;
+  int visible = 0;
+  for (int i = 0; i < 4; i++) { total += v[i]; if (v[i]) visible++; }
+  const float gap = visible > 1 ? 5.0f : 0.0f, minSweep = 6.0f;
+  float sweep[4] = {}, sum = 0;
+  for (int i = 0; i < 4; i++) {
+    if (v[i]) sweep[i] = fmaxf(minSweep, 360.0f * v[i] / total);
+    sum += sweep[i];
+  }
+  const float scale = visible ? (360.0f - gap * visible) / sum : 0;
+  float a = gap / 2;
+  for (int i = 0; i < 4; i++) {
+    if (!v[i]) { lv_obj_add_flag(runSeg[i], LV_OBJ_FLAG_HIDDEN); continue; }
+    float s = sweep[i] * scale;
+    lv_arc_set_bg_angles(runSeg[i], (int)roundf(a), (int)roundf(a + s));
+    lv_obj_set_style_arc_opa(runSeg[i], dim ? LV_OPA_40 : LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_remove_flag(runSeg[i], LV_OBJ_FLAG_HIDDEN);
+    a += s + gap;
+  }
+}
+
+static void fmtRunCount(char *out, size_t n, uint32_t v) {   // 4 digits in full, then 12k, 1.2M
+  if (v < 10000) snprintf(out, n, "%lu", (unsigned long)v); else fmtCount(out, n, v);
+}
+
 void uiShowProvider(const Model &m, uint8_t idx, bool animate) {
   if (lv_screen_active() != scrProv) lv_screen_load_anim(scrProv, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
   if (idx >= m.nProviders) return;
@@ -196,13 +258,19 @@ void uiShowProvider(const Model &m, uint8_t idx, bool animate) {
   uint32_t accent = st ? st->accent : 0xFFFFFF;
   uint32_t col = statusColor(p.status, accent);
   char buf[64], buf2[64];
+  const bool isRuns = p.kind == Kind::Runs;
+  showRuns(isRuns);
+  lv_obj_align(lblSub2, LV_ALIGN_TOP_MID, 0, isRuns ? 358 : 326);   // sits below the count grid
 
   if (st) lv_image_set_src(imgIcon, st->icon96);
   lv_obj_set_style_image_opa(imgIcon, p.status == Status::Stale ? LV_OPA_50 : LV_OPA_COVER, 0);
   lv_label_set_text(lblName, p.name);
   // plan line: "Lite · 1.1k req · 197M tok / 30d" for windows providers (money providers put usage below)
   fmtUsage30d(buf, sizeof buf, p);
-  if (p.kind == Kind::Windows && buf[0]) {
+  if (isRuns) {
+    snprintf(buf2, sizeof buf2, "%lu workflow runs", (unsigned long)p.runs.total);
+    lv_label_set_text(lblPlan, buf2);
+  } else if (p.kind == Kind::Windows && buf[0]) {
     if (p.plan[0]) snprintf(buf2, sizeof buf2, "%s · %s", p.plan, buf); else snprintf(buf2, sizeof buf2, "%s", buf);
     lv_label_set_text(lblPlan, buf2);
   } else {
@@ -246,6 +314,22 @@ void uiShowProvider(const Model &m, uint8_t idx, bool animate) {
     if (usage[0]) snprintf(buf2, sizeof buf2, "%s spent · %s", buf, usage);
     else snprintf(buf2, sizeof buf2, "%s spent / 30d", buf);
     lv_label_set_text(lblSub2, buf2);
+  } else if (isRuns) {
+    const Runs &r = p.runs;
+    const bool stale = p.status == Status::Stale;
+    const uint32_t v[4] = {r.running, r.completed, r.failed, r.cancelled};
+    lv_obj_add_flag(arcInner, LV_OBJ_FLAG_HIDDEN);
+    animArc(arcOuter, 0, false);                 // only its dim track shows, behind the segments
+    lv_label_set_text(lblBig, "");
+    lv_label_set_text(lblSub, "");
+    layoutRunSegments(v, stale);
+    for (int i = 0; i < 4; i++) {
+      fmtRunCount(buf, sizeof buf, v[i]);
+      lv_label_set_text(runNum[i], buf);
+      lv_obj_set_style_text_color(runNum[i], lv_color_hex(stale || !v[i] ? C_DIM : RUN_COLOR[i]), 0);
+    }
+    if (r.waiting) snprintf(buf2, sizeof buf2, "%lu waiting", (unsigned long)r.waiting); else buf2[0] = 0;
+    lv_label_set_text(lblSub2, buf2);
   } else {
     lv_obj_add_flag(arcInner, LV_OBJ_FLAG_HIDDEN);
     animArc(arcOuter, 0, false);
@@ -283,7 +367,10 @@ static void buildOverview() {
 
 void uiShowOverview(const Model &m, uint8_t currentIdx) {
   if (lv_screen_active() != scrOver) lv_screen_load_anim(scrOver, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
-  const float R = 160.0f;
+  // 9 mini arcs of 104 px would sit ~5 px apart on r=160; shrink them and widen the ring instead
+  const bool crowded = m.nProviders > 8;
+  const float R = crowded ? 165.0f : 160.0f;
+  const int arcSz = crowded ? 96 : 104;
   for (int i = 0; i < MAX_PROVIDERS; i++) {
     if (i >= m.nProviders) {
       lv_obj_add_flag(ovArc[i], LV_OBJ_FLAG_HIDDEN);
@@ -296,16 +383,22 @@ void uiShowOverview(const Model &m, uint8_t currentIdx) {
     int cx = (int)(R * cosf(ang * DEG_TO_RAD)), cy = (int)(R * sinf(ang * DEG_TO_RAD));
     lv_obj_remove_flag(ovArc[i], LV_OBJ_FLAG_HIDDEN);
     lv_obj_remove_flag(ovIcon[i], LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_size(ovArc[i], arcSz, arcSz);
     lv_obj_align(ovArc[i], LV_ALIGN_CENTER, cx, cy);
     lv_obj_align(ovIcon[i], LV_ALIGN_CENTER, cx, cy);
     if (st) lv_image_set_src(ovIcon[i], st->icon64);
     uint32_t col = statusColor(p.status, st ? st->accent : 0xFFFFFF);
+    if (p.kind == Kind::Runs && p.runs.running && p.status == Status::Ok) col = C_RUN;   // something is running
     setArcColor(ovArc[i], col);
     lv_obj_set_style_arc_color(ovArc[i], lv_color_hex(i == currentIdx ? 0x3A4048 : C_RING_BG), LV_PART_MAIN);
     lv_obj_set_style_image_opa(ovIcon[i], p.status == Status::Stale ? LV_OPA_50 : LV_OPA_COVER, 0);
     int32_t v = 0;
     if (p.kind == Kind::Windows && p.nWindows) v = (int32_t)(p.windows[0].usedPct * 10);
     else if (p.kind == Kind::Money) v = p.money.total > 0 ? (int32_t)(p.money.remaining / p.money.total * 1000) : 1000;
+    else if (p.kind == Kind::Runs) {              // success rate of the finished runs
+      uint64_t fin = (uint64_t)p.runs.completed + p.runs.failed + p.runs.cancelled;
+      v = fin ? (int32_t)((uint64_t)p.runs.completed * 1000 / fin) : 0;
+    }
     lv_arc_set_value(ovArc[i], constrain(v, 0, 1000));
   }
   char buf[24];
@@ -391,5 +484,6 @@ void uiInit() {
   buildProvider();
   buildOverview();
   buildMessage();
+  uiArchonInit();
   lv_screen_load(scrProv);
 }
