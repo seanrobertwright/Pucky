@@ -4,6 +4,7 @@ Round-screen knob display (Elecrow CrowPanel 2.1" rotary, see `crowpanel-2.1-rot
 usage/credits for six AI providers (Claude Code, Codex, OpenRouter, Antigravity, z.AI, DeepSeek). Turn the knob to pick a provider; it auto-cycles when idle.
 
 Status: design accepted 2026-09-12. Host: all six adapters implemented; Gemini CLI (retired June 2026) replaced by Antigravity. Firmware: MVP built.
+Later additions: GitHub Copilot, Kiro, and an Archon workflow monitor (§2, §3, §4) — the first provider that is not a usage meter.
 
 ## 1. Decisions
 
@@ -28,6 +29,7 @@ Status: design accepted 2026-09-12. Host: all six adapters implemented; Gemini C
 | Antigravity (agy CLI + IDE, Google AI Pro) | windows: one arc per quota pool (Gemini models; Claude + GPT-OSS), 5 h reset | `POST https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist` (metadata `ideType: ANTIGRAVITY`) -> `cloudaicompanionProject`, `paidTier.name`; `POST .../v1internal:fetchAvailableModels` -> `models{id: {displayName, quotaInfo{remainingFraction, resetTime}}}`; models with identical fraction+reset share a pool. | Bearer from agy's OS-keyring entry (Windows Credential Manager `gemini:antigravity`, JSON `{token:{access_token, refresh_token, expiry}}`), read-only; expired tokens refreshed in memory with Antigravity's public OAuth client. `User-Agent: antigravity`. | High (confirmed live 2026-09-12; endpoints undocumented) |
 | GitHub Copilot (Pro) | windows: monthly premium requests | `GET https://api.github.com/copilot_internal/user` -> `quota_snapshots.premium_interactions{entitlement, credits_used, remaining}`, `quota_reset_date` | Bearer token from `gh auth token`, read-only. | High (confirmed live 2026-09-12) |
 | Kiro | windows: monthly credits, bonus, overage | `GET https://codewhisperer.us-east-1.amazonaws.com/getUsageLimits?origin=AI_EDITOR&resourceType=AGENTIC_REQUEST&profileArn=...` -> `usageBreakdownList[CREDIT]`, `nextDateReset`, `subscriptionInfo` | Bearer `accessToken` from `~/.aws/sso/cache/kiro-auth-token.json`, read-only; expired -> stale until Kiro IDE refreshes it. | Medium (request format from Q Developer CLI client + community proxies) |
+| Archon (workflow runs) | runs: running / completed / failed / cancelled (+ waiting = pending + paused) | `GET <base_url>/api/dashboard/runs?limit=1` -> `counts{all, running, completed, failed, cancelled, pending, paused}`. The counts are server-side totals that ignore `limit`, so one tiny request per poll; `?after=<ISO time>` would scope them to a window but running runs older than the window would drop out, so the totals are all-time (same as Archon's dashboard header). | None (local backend, default `http://localhost:3090`). Server down = `error` "Archon not reachable", not stale. | High (confirmed live 2026-11-12, OpenAPI at `/api/openapi.json`) |
 | ~~Gemini CLI~~ | retired by Google 2026-06-18; adapter kept but disabled (its OAuth client is rejected: "unsupported client") | | | |
 | z.AI GLM Coding Plan | windows: 5 h, 7 d (+ monthly MCP tools on higher plans); 30-day calls/tokens | `GET https://api.z.ai/api/monitor/usage/quota/limit` -> `data.limits[]{type, unit, number, percentage, nextResetTime}` (`unit` 3 = hours, 6 = weeks; `type` TIME_LIMIT = monthly MCP). `GET .../model-usage?startTime=&endTime=` (`yyyy-MM-dd HH:mm:ss`) -> `data.totalUsage{totalModelCallCount, totalTokensUsage}`. | `Authorization: <api key>` (**no** "Bearer"), `Accept-Language: en-US,en`. Key from config. | High (confirmed live 2026-09-12) |
 | OpenRouter | credits (+ optional 30-day spend/requests/tokens) | `GET https://openrouter.ai/api/v1/credits` -> `data.total_credits`, `data.total_usage`; remaining = diff. 30-day spend from daily `total_usage` snapshots, **or** exact from `GET /api/v1/activity` (last 30 completed UTC days, rows `{usage, byok_usage_inference, requests, prompt_tokens, completion_tokens, reasoning_tokens}`) when a management key is configured. | `Authorization: Bearer <key>`; activity needs a *management* key (`management_key` in config) | High (documented, confirmed live) |
@@ -65,6 +67,16 @@ Snapshots: host appends `{date, provider, total_usage_or_balance}` once per day 
 }
 ```
 
+Archon is the one provider of `kind: "runs"` — no windows or money, just tallies:
+
+```json
+{ "id": "archon", "name": "Archon", "kind": "runs", "status": "ok", "updated_at": 1789234500, "poll_s": 30,
+  "runs": { "running": 0, "completed": 33, "failed": 12, "cancelled": 14, "waiting": 0, "total": 59 } }
+```
+
+Its `status` is `ok` unless the data is stale/unreachable: the tallies are all-time, so a non-zero `failed`
+is permanent and must not turn the LED amber.
+
 `status` ∈ `ok | warn | crit | stale | error`. `error` carries `"message"`. Order of `providers`
 is the dial order. Unknown fields are ignored by the device (forward compatible).
 
@@ -83,7 +95,13 @@ the 30-day spend (money kind). Currently populated by z.AI (always), OpenRouter 
 - Arc colour by status: ok = provider accent, warn = amber, crit = red, stale = grey, error = red outline + message
 - Page change animates as a short rotate/slide in the knob direction
 
-**Overview page** (double-click): six mini arcs arranged on a ring with icons; centre shows `AI spend / 30d $84`. Rotating from here jumps to that provider's page.
+**Archon page** (`kind: "runs"`): the 470 px ring is split into up to four segments sized by share of all runs
+(running blue, completed green, failed red, cancelled amber; 5° gaps, 6° minimum so a lone failure stays
+visible); the centre is a 2×2 grid of the four counts (zero = grey) over their captions, "N workflow runs"
+under the name, and "N waiting" when runs are queued or paused at an approval gate. Stale data dims the ring.
+
+**Overview page** (double-click): mini arcs arranged on a ring with icons (nine now: they shrink to 96 px on r=165 so
+neighbours keep ~17 px apart; Archon's arc is the success rate of finished runs, blue while anything is running); centre shows `AI spend / 30d $84`. Rotating from here jumps to that provider's page.
 
 **Boot/offline page**: logo, "connecting to WiFi…", "host unreachable — retrying" with the host URL.
 
@@ -96,7 +114,9 @@ the 30-day spend (money kind). Currently populated by z.AI (always), OpenRouter 
 | Double-click | Toggle overview page |
 | Idle | Auto-cycle every 8 s, resuming 30 s after the last input |
 | LED (GPIO 43) | Breathes in the colour of the **worst** provider status (ok = dim white, warn = amber, crit = red, all stale = slow grey pulse) |
-| Touch | Unused in v1 |
+| Touch (CST8xx, polled over I2C every 20 ms) | Only a tap is recognised (down and up within 0.7 s, under 40 px of travel). On the Archon page: open the run list. Run list: open the selected run's graph. Graph: refresh now. Ignored elsewhere. |
+| Archon run list | Rotate = select (no wrap); tap = open graph; press or double-click = back to the Archon page. Refetched every 10 s. |
+| Archon graph | Rotate = move the focus one node (row by row, left to right), the view pans so the focused row is centred; press = back to the list; double-click = back to the Archon page. Refetched every 8 s; starts on the first running (else first failed) node. Both views pause auto-cycle and close after 5 min without input. |
 | Backlight | 80 % PWM; dims to 20 % after 10 min idle at night (11 PM–7 AM), any input restores |
 
 ## 6. Firmware layout (PlatformIO, `env:rotary21`)
@@ -106,7 +126,8 @@ src/main.cpp          setup/loop, task wiring
 src/net.cpp/.h        WiFi connect/reconnect, HTTP poll of host, JSON -> model
 src/model.h           Provider/Window/Money structs, status enum
 src/ui/*.cpp/.h       LVGL screens, arcs, transitions, icons
-src/input.cpp/.h      encoder ISR (GPIO 42/4), PCF8574 button, click/double-click
+src/ui_archon.cpp     Archon run list + workflow graph screens; src/archon.h = their data
+src/input.cpp/.h      encoder ISR (GPIO 42/4), PCF8574 button, click/double-click, touch tap
 src/board.cpp/.h      Arduino_GFX ST7701 bring-up, PCF8574 power sequence, backlight, LED
 include/board_pins.h  pin map (from docs/crowpanel-2.1-rotary.md)
 include/secrets.h     gitignored: WIFI_SSID, WIFI_PASS, HOST_URL
@@ -131,6 +152,26 @@ host/install-task.ps1    registers the Task Scheduler job (at logon, hidden)
 ```
 
 `GET /api/status` (device), `GET /api/refresh` (device on knob press: wakes all pollers, returns at once), `GET /` (tiny human-readable status page for debugging).
+
+Archon drill-down, fetched by the device on demand (not part of the status poll); errors are HTTP 502 `{"error": "..."}`:
+
+- `GET /api/archon/runs` -> `{"now", "active": N, "runs": [{"id", "name", "status", "started_at", "ended_at", "node", "project"}]}`.
+  Active runs first (running, paused, pending), then `recent_finished` finished ones. At most `max_runs` (8).
+- `GET /api/archon/graph?id=<run id>` -> `{"id", "name", "status", "layers", "width", "lanes_l", "lanes_r", "done", "total",
+  "nodes": [{"id", "state", "l", "x", "at"?}], "edges": [[from, to, lane]]}`.
+
+The host does the digest **and the layout**; the device only draws. Archon's run detail is 0.2-4 MB of events whatever the query, so it never goes near the ESP32 (answers are cached 4 s, definitions 60 s).
+- Structure: the workflow definition (`GET /api/workflows/<name>` -> `nodes[].id`, `depends_on`).
+- State: replay of the run's `node_started / node_completed / node_failed / node_skipped` events, overruled by
+  `terminal_record` once the run has ended. A sub-workflow node never reports itself, its children do
+  (`review__code`, `ship__triage__triage`, `await-checks.ci-probe`), so their states are rolled up into the parent and the
+  active child is passed along as `at`. In a finished run, nodes that never ran are `skipped`.
+- Layout: `l` = row (longest path from a root), `x` = column offset in column units (0 = centre), siblings ordered by
+  the barycentre of their parents; `nodes` is sorted by `(l, x)`, which is the dial order. An edge to the next row is
+  straight (`lane` 0). An edge that skips rows would cut through the nodes in between, so it runs down a vertical lane
+  beside the graph: `lane` -k / +k = k-th lane on the left / right; all long edges into one node share a lane.
+- Device (`src/ui_archon.cpp`): rows 62 px apart, focused row at y=236, columns `min(170, (420 - lane margins) / width)`,
+  painted in a single LVGL draw callback (no per-node widgets); limits 40 nodes / 96 edges / 8 runs (`src/archon.h`).
 
 ## 8. Plan
 

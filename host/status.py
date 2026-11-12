@@ -98,6 +98,11 @@ def build_provider(pid: str, name: str, rec: dict, th: dict, poll_s: int, now: f
     if res["kind"] == "windows":
         out["windows"] = res["windows"]
         status = window_status(res["windows"], th)
+    elif res["kind"] == "runs":
+        # run tallies are all-time, so a non-zero "failed" is permanent and must not colour the
+        # status or the LED; only freshness (below) can change it from "ok"
+        out["runs"] = res["runs"]
+        status = "ok"
     else:
         m = dict(res["money"])
         remaining = m["remaining_usd"]

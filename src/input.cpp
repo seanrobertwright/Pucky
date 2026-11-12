@@ -27,6 +27,32 @@ static uint32_t btnChangeMs = 0, btnDownMs = 0, btnUpMs = 0, lastPollMs = 0;
 static uint8_t clicks = 0;
 static bool longFired = false;
 
+// ---- touch: a tap is finger down then up within TAP_MAX_MS; held or dragged touches are ignored ----
+static const uint32_t TAP_MAX_MS = 700, TAP_GAP_MS = 250, TOUCH_POLL_MS = 20;
+static const int TAP_MOVE_PX = 40;
+static bool touchDown = false;
+static uint32_t touchDownMs = 0, lastTapMs = 0, lastTouchPollMs = 0, touchSeenMs = 0;
+static uint16_t touchX0 = 0, touchY0 = 0, touchX = 0, touchY = 0;
+
+static bool touchPoll(uint32_t now) {
+  if (now - lastTouchPollMs < TOUCH_POLL_MS) return false;
+  lastTouchPollMs = now;
+  uint16_t x, y;
+  if (boardTouch(x, y)) {
+    if (!touchDown) { touchDown = true; touchDownMs = now; touchX0 = x; touchY0 = y; }
+    touchX = x; touchY = y; touchSeenMs = now;
+    return false;
+  }
+  if (!touchDown || now - touchSeenMs < 40) return false;      // ride out a single missed read
+  touchDown = false;
+  bool still = abs((int)touchX - touchX0) <= TAP_MOVE_PX && abs((int)touchY - touchY0) <= TAP_MOVE_PX;
+  bool tap = touchSeenMs - touchDownMs <= TAP_MAX_MS && still && now - lastTapMs >= TAP_GAP_MS;
+  Serial.printf("[touch] %s at %u,%u after %lu ms\n", tap ? "tap" : "ignored", touchX, touchY,
+                (unsigned long)(touchSeenMs - touchDownMs));
+  if (tap) lastTapMs = now;
+  return tap;
+}
+
 void inputInit() {
   pinMode(ENC_A, INPUT_PULLUP);
   pinMode(ENC_B, INPUT_PULLUP);
@@ -44,6 +70,7 @@ InputEvent inputPoll() {
   if (pend < 0) return InputEvent::CCW;
 
   uint32_t now = millis();
+  if (touchPoll(now)) return InputEvent::Tap;
   if (now - lastPollMs < POLL_MS) return InputEvent::None;
   lastPollMs = now;
 

@@ -21,6 +21,7 @@ Planned mapping (provider -> icon):
 | z.AI (GLM)  | `zai`             | white "Z"; `zhipu*` is the parent co.  |
 | Kiro        | `kiro-color`      | purple ghost tile (`kiro` = white)     |
 | GitHub Copilot | `githubcopilot` | Copilot mascot, white (`copilot` = M365 Copilot, not used) |
+| Archon      | `archon-source.png` | gradient shield; **not** from lobehub: Archon's own `/favicon.png` (409 px, transparent), fetched 2026-11-12 from the local server. No SVG, so `png/archon-{64,96}.png` are `magick -background none archon-source.png -resize NxN -gravity center -extent NxN` |
 
 For LVGL, convert the chosen PNGs to C arrays (RGB565A8) with LVGL's image converter:
 

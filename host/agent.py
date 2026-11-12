@@ -10,16 +10,17 @@ import sys
 import threading
 import time
 import tomllib
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import status as st
-from providers import ProviderError
+from providers import ProviderError, archon
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAMES = {"claude": "Claude Code", "codex": "Codex", "openrouter": "OpenRouter", "antigravity": "Antigravity",
          "gemini": "Gemini", "zai": "z.AI GLM", "deepseek": "DeepSeek", "kiro": "Kiro",
-         "copilot": "GitHub Copilot"}
-DEFAULT_ORDER = ["claude", "codex", "copilot", "kiro", "openrouter", "antigravity", "zai", "deepseek"]
+         "copilot": "GitHub Copilot", "archon": "Archon"}
+DEFAULT_ORDER = ["claude", "codex", "copilot", "kiro", "openrouter", "antigravity", "zai", "deepseek", "archon"]
 MAX_BACKOFF = 1800
 
 
@@ -40,6 +41,7 @@ class Poller(threading.Thread):
         super().__init__(name=f"poll-{pid}", daemon=True)
         self.pid, self.cfg = pid, cfg
         self.poll_s = int(cfg.get("poll_s", 300))
+        self.max_backoff = int(cfg.get("max_backoff_s", MAX_BACKOFF))   # local services want a short cap
         self.mod = importlib.import_module(f"providers.{pid}")
         self.rec = {"result": None, "updated_at": None, "error": None, "stale": False}
         self.lock = threading.Lock()
@@ -59,12 +61,12 @@ class Poller(threading.Thread):
             if e.retry_after:
                 self.backoff = max(self.backoff, e.retry_after)
             else:
-                self.backoff = min(MAX_BACKOFF, max(60, self.backoff * 2))
+                self.backoff = min(self.max_backoff, max(60, self.backoff * 2))
             log(f"[{self.pid}] {'stale' if e.stale else 'error'}: {e}  (backoff {int(self.backoff)}s)")
         except Exception as e:  # adapter bug — keep the thread alive
             with self.lock:
                 self.rec.update(error=f"internal: {e!r}")
-            self.backoff = min(MAX_BACKOFF, max(60, self.backoff * 2))
+            self.backoff = min(self.max_backoff, max(60, self.backoff * 2))
             log(f"[{self.pid}] internal error: {e!r}")
 
     def run(self) -> None:
@@ -135,6 +137,21 @@ def make_handler(agent: Agent):
             elif path == "/api/refresh":
                 agent.refresh_all()
                 self._send(200, b'{"ok":true}', "application/json")
+            elif path in ("/api/archon/runs", "/api/archon/graph"):
+                # drill-down for the dial's touch UI; fetched on demand, not part of the status poll
+                query = urllib.parse.parse_qs(self.path.partition("?")[2])
+                try:
+                    acfg = agent.cfg.get("providers", {}).get("archon", {})
+                    if path.endswith("/runs"):
+                        out = archon.list_runs(acfg)
+                    else:
+                        out = archon.run_graph(acfg, (query.get("id") or [""])[0])
+                    self._send(200, json.dumps(out).encode(), "application/json")
+                except ProviderError as e:
+                    self._send(502, json.dumps({"error": str(e)}).encode(), "application/json")
+                except Exception as e:      # adapter bug: tell the device instead of dropping the socket
+                    log(f"[archon] {path} internal error: {e!r}")
+                    self._send(500, json.dumps({"error": f"internal: {e!r}"[:120]}).encode(), "application/json")
             elif path == "/":
                 s = agent.status()
                 rows = "".join(
@@ -166,6 +183,10 @@ def _fmt(p: dict) -> str:
     elif p.get("kind") == "money":
         m = p["money"]
         s = f"${m['remaining_usd']:.2f} left · ${m.get('spend_30d_usd', 0):.2f}/30d"
+    elif p.get("kind") == "runs":
+        r = p["runs"]
+        return (f"{r['running']} running · {r['completed']} completed · {r['failed']} failed · "
+                f"{r['cancelled']} cancelled" + (f" · {r['waiting']} waiting" if r["waiting"] else ""))
     else:
         return "—"
     if p.get("requests_30d") is not None:

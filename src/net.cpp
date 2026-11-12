@@ -71,6 +71,15 @@ static bool parseInto(Model &m, const String &body) {
       // schema 1 carried the counters inside "money"; newer hosts also put them on the provider
       if (!mo["requests_30d"].isNull()) pr.requests30d = mo["requests_30d"];
       if (!mo["tokens_30d"].isNull()) pr.tokens30d = mo["tokens_30d"];
+    } else if (!strcmp(kind, "runs")) {
+      pr.kind = Kind::Runs;
+      JsonObject r = p["runs"];
+      pr.runs.running = r["running"] | 0u;
+      pr.runs.completed = r["completed"] | 0u;
+      pr.runs.failed = r["failed"] | 0u;
+      pr.runs.cancelled = r["cancelled"] | 0u;
+      pr.runs.waiting = r["waiting"] | 0u;
+      pr.runs.total = r["total"] | 0u;
     } else {
       pr.kind = Kind::None;
     }
@@ -86,6 +95,128 @@ static String refreshUrl() {
   int i = u.lastIndexOf("/api/status");
   if (i >= 0) u = u.substring(0, i) + "/api/refresh";
   return u;
+}
+
+// ------------------------------------------------------------------ Archon drill-down
+static String apiUrl(const char *path) {
+  String u = HOST_URL;
+  int i = u.lastIndexOf("/api/status");
+  if (i >= 0) u = u.substring(0, i);
+  return u + path;
+}
+
+static ArRuns arRuns = {};        // guarded by mtx; too big for a task stack, hence static
+static ArGraph arGraph = {};
+static ArRuns arRunsTmp;
+static ArGraph arGraphTmp;
+static volatile bool wantRuns = false, wantGraph = false;
+static volatile uint32_t arRunsSeq = 0, arGraphSeq = 0;
+static char wantGraphId[40] = "";
+
+static NodeState parseNodeState(const char *s) {
+  if (!s) return NodeState::Pending;
+  if (!strcmp(s, "running")) return NodeState::Running;
+  if (!strcmp(s, "completed")) return NodeState::Completed;
+  if (!strcmp(s, "failed")) return NodeState::Failed;
+  if (!strcmp(s, "skipped")) return NodeState::Skipped;
+  if (!strcmp(s, "cancelled")) return NodeState::Cancelled;
+  return NodeState::Pending;
+}
+
+// GET a host JSON endpoint. On failure `err` gets the host's {"error": ...} text or the HTTP code.
+static bool getJson(const String &url, uint32_t timeoutMs, JsonDocument &doc, char *err, size_t errLen) {
+  HTTPClient http;
+  http.setTimeout(timeoutMs);
+  http.setConnectTimeout(HTTP_TIMEOUT_MS);
+  err[0] = 0;
+  if (!http.begin(url)) { copyStr(err, errLen, "bad host URL"); return false; }
+  int code = http.GET();
+  bool ok = false;
+  if (code > 0) {
+    DeserializationError de = deserializeJson(doc, http.getString());
+    if (code == 200 && !de) ok = true;
+    else if (!de && doc["error"].is<const char *>()) copyStr(err, errLen, doc["error"]);
+    else snprintf(err, errLen, de ? "bad answer from host (HTTP %d)" : "host said HTTP %d", code);
+  } else {
+    copyStr(err, errLen, "host unreachable");
+  }
+  http.end();
+  Serial.printf("[net] GET %s -> %d%s%s\n", url.c_str(), code, ok ? "" : "  ", ok ? "" : err);
+  return ok;
+}
+
+static void fetchRuns() {
+  ArRuns &r = arRunsTmp;
+  memset(&r, 0, sizeof r);
+  JsonDocument doc;
+  r.ok = getJson(apiUrl("/api/archon/runs"), 8000, doc, r.error, sizeof r.error);
+  if (r.ok) {
+    r.nActive = doc["active"] | 0;
+    for (JsonObject o : doc["runs"].as<JsonArray>()) {
+      if (r.n >= AR_MAX_RUNS) break;
+      ArRun &run = r.runs[r.n++];
+      copyStr(run.id, sizeof run.id, o["id"]);
+      copyStr(run.name, sizeof run.name, o["name"]);
+      copyStr(run.status, sizeof run.status, o["status"]);
+      copyStr(run.node, sizeof run.node, o["node"]);
+      copyStr(run.project, sizeof run.project, o["project"]);
+      run.startedAt = o["started_at"] | 0L;
+      run.endedAt = o["ended_at"] | 0L;
+    }
+  }
+  xSemaphoreTake(mtx, portMAX_DELAY);
+  arRunsSeq = arRunsSeq + 1;   // only this task writes it
+  r.seq = arRunsSeq;
+  arRuns = r;
+  xSemaphoreGive(mtx);
+}
+
+static void fetchGraph() {
+  ArGraph &gr = arGraphTmp;
+  memset(&gr, 0, sizeof gr);
+  char id[40];
+  xSemaphoreTake(mtx, portMAX_DELAY);
+  copyStr(id, sizeof id, wantGraphId);
+  xSemaphoreGive(mtx);
+  JsonDocument doc;
+  // Archon needs ~2 s to produce a run's detail and the host adds the layout: allow well over that
+  gr.ok = getJson(apiUrl("/api/archon/graph?id=") + id, 15000, doc, gr.error, sizeof gr.error);
+  copyStr(gr.id, sizeof gr.id, id);
+  if (gr.ok) {
+    copyStr(gr.name, sizeof gr.name, doc["name"]);
+    copyStr(gr.status, sizeof gr.status, doc["status"]);
+    gr.startedAt = doc["started_at"] | 0L;
+    gr.endedAt = doc["ended_at"] | 0L;
+    gr.layers = doc["layers"] | 0;
+    gr.width = doc["width"] | 1;
+    gr.lanesL = doc["lanes_l"] | 0;
+    gr.lanesR = doc["lanes_r"] | 0;
+    gr.done = doc["done"] | 0;
+    gr.total = doc["total"] | 0;
+    for (JsonObject o : doc["nodes"].as<JsonArray>()) {
+      if (gr.nNodes >= AR_MAX_NODES) break;
+      ArNode &n = gr.nodes[gr.nNodes++];
+      copyStr(n.label, sizeof n.label, o["id"]);
+      copyStr(n.at, sizeof n.at, o["at"]);
+      n.state = parseNodeState(o["state"]);
+      n.layer = o["l"] | 0;
+      n.x = o["x"] | 0.0f;
+    }
+    for (JsonArray a : doc["edges"].as<JsonArray>()) {
+      if (gr.nEdges >= AR_MAX_EDGES) break;
+      int from = a[0] | -1, to = a[1] | -1;
+      if (from < 0 || to < 0 || from >= gr.nNodes || to >= gr.nNodes) continue;   // truncated node list
+      ArEdge &ed = gr.edges[gr.nEdges++];
+      ed.from = from;
+      ed.to = to;
+      ed.lane = a[2] | 0;
+    }
+  }
+  xSemaphoreTake(mtx, portMAX_DELAY);
+  arGraphSeq = arGraphSeq + 1;
+  gr.seq = arGraphSeq;
+  arGraph = gr;
+  xSemaphoreGive(mtx);
 }
 
 static void askHostToRefresh() {
@@ -138,6 +269,8 @@ static void netTask(void *) {
       nextPoll = now + REFRESH_FIRST_MS;
       followUp = now + REFRESH_SECOND_MS;
     }
+    if (wantRuns) { wantRuns = false; fetchRuns(); now = millis(); }
+    if (wantGraph) { wantGraph = false; fetchGraph(); now = millis(); }
     if (nextPoll == 0 || (int32_t)(now - nextPoll) >= 0) {
       if (followUp && (int32_t)(now - followUp) >= 0) { followUp = 0; refreshing = false; }
       nextPoll = followUp ? followUp : now + POLL_MS;
@@ -169,6 +302,30 @@ void netStart() {
 void netGetModel(Model &out) {
   xSemaphoreTake(mtx, portMAX_DELAY);
   out = shared;
+  xSemaphoreGive(mtx);
+}
+
+void netArchonRequestRuns() { wantRuns = true; }
+
+void netArchonRequestGraph(const char *runId) {
+  xSemaphoreTake(mtx, portMAX_DELAY);
+  copyStr(wantGraphId, sizeof wantGraphId, runId);
+  xSemaphoreGive(mtx);
+  wantGraph = true;
+}
+
+uint32_t netArchonRunsSeq() { return arRunsSeq; }
+uint32_t netArchonGraphSeq() { return arGraphSeq; }
+
+void netArchonGetRuns(ArRuns &out) {
+  xSemaphoreTake(mtx, portMAX_DELAY);
+  out = arRuns;
+  xSemaphoreGive(mtx);
+}
+
+void netArchonGetGraph(ArGraph &out) {
+  xSemaphoreTake(mtx, portMAX_DELAY);
+  out = arGraph;
   xSemaphoreGive(mtx);
 }
 

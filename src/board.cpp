@@ -68,6 +68,33 @@ static uint8_t pcfRead() {
 
 bool boardButtonPressed() { return !(pcfRead() & (1 << PCF_ENC_BTN)); }
 
+// CST8xx (CST816-family) register map: 0x02 = finger count, 0x03..0x06 = XH XL YH YL (high nibble
+// of XH/YH carries event flags). A sleeping or absent controller just NACKs, which reads as "no touch".
+bool boardTouch(uint16_t &x, uint16_t &y) {
+  Wire.beginTransmission(TOUCH_ADDR);
+  Wire.write(0x02);
+  if (Wire.endTransmission(false) != 0) return false;
+  if (Wire.requestFrom((uint8_t)TOUCH_ADDR, (uint8_t)5) != 5) return false;
+  uint8_t n = Wire.read() & 0x0F, xh = Wire.read(), xl = Wire.read(), yh = Wire.read(), yl = Wire.read();
+  if (n == 0 || n > 2) return false;
+  x = ((uint16_t)(xh & 0x0F) << 8) | xl;
+  y = ((uint16_t)(yh & 0x0F) << 8) | yl;
+  return true;
+}
+
+static void touchInit() {
+  Wire.beginTransmission(TOUCH_ADDR);
+  Wire.write(0xA7);                        // chip id
+  uint8_t id = 0;
+  bool ok = Wire.endTransmission(false) == 0 && Wire.requestFrom((uint8_t)TOUCH_ADDR, (uint8_t)1) == 1;
+  if (ok) id = Wire.read();
+  Wire.beginTransmission(TOUCH_ADDR);      // keep it awake: we poll instead of using the INT line
+  Wire.write(0xFE);
+  Wire.write(0x01);
+  uint8_t err = Wire.endTransmission();
+  Serial.printf("[board] touch %s, chip id 0x%02X, auto-sleep off: %s\n", ok ? "found" : "NOT answering", id, err ? "no ack" : "ok");
+}
+
 void boardBacklight(uint8_t pct) { ledcWrite(LCD_BL, (uint32_t)pct * 255 / 100); }
 void boardLed(uint8_t pct)       { ledcWrite(LED_PIN, (uint32_t)pct * 255 / 100); }
 
@@ -88,6 +115,8 @@ void boardInit() {
   pcfWrite(PCF_TP_RST, false);  delay(10);
   pcfWrite(PCF_TP_RST, true);   delay(50);
   pcfWrite(PCF_TP_INT, true);
+
+  touchInit();
 
   if (!gfx->begin()) Serial.println("[board] gfx->begin() failed");
   gfx->fillScreen(0x0000);
